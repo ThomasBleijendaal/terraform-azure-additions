@@ -29,24 +29,44 @@ public class SerivceConnectionResourceProviderTest
     {
         services.AddSingleton<AzureConfigurator>();
         services.AddTerraformProviderConfigurator<AzureConfiguration, AzureConfigurator>();
-        services.AddSingleton<IResourceProvider<ServiceConnectionResource>, ServiceConnectionResourceProvider>();
+        services.AddHttpClient<IResourceProvider<ServiceConnectionResource>, ServiceConnectionResourceProvider>();
         registryContext.RegisterResource<ServiceConnectionResource>($"{ProviderName}_serviceconnection");
     }
 
     [Test]
     public async Task TestCreateServiceConnectionResourceAsync()
     {
-        using var terraform = await _host.CreateTerraformTestInstanceAsync(ProviderName);
+        using var terraform = await _host.CreateTerraformTestInstanceAsync(ProviderName, configure: false);
 
         var resourcePath = Path.Combine(terraform.WorkDir, "file.tf");
-        
-        await File.WriteAllTextAsync(resourcePath, $@"
-resource ""{ProviderName}_serviceconnection"" ""conn"" {{
-    id = ""{Guid.NewGuid()}""
-}}
-");
+
+        await File.WriteAllTextAsync(resourcePath, $$"""
+            provider "azureadditions" {
+              org_service_url       = "{{Environment.GetEnvironmentVariable("ORGURL")}}"
+              personal_access_token = "{{Environment.GetEnvironmentVariable("PAT")}}"
+            }
+
+            terraform {
+              required_providers {
+                {{ProviderName}} = {
+                  source = "example.com/example/{{ProviderName}}"
+                  version = "1.0.0"
+                }
+              }
+            }
+
+            resource "{{ProviderName}}_serviceconnection" "conn" {
+                id = "{{Environment.GetEnvironmentVariable("SCID")}}"
+                project_id = "{{Environment.GetEnvironmentVariable("PID")}}"
+            }
+            """);
 
         var planOutput = await terraform.PlanWithOutputAsync();
+
+        Console.WriteLine(planOutput);
+
         var applyOutput = await terraform.ApplyAsync();
+
+        Console.WriteLine(applyOutput);
     }
 }
