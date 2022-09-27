@@ -1,4 +1,5 @@
 ﻿using System.Net.Http.Headers;
+using System.Numerics;
 using System.Text;
 using TerraformPluginDotNet.ResourceProvider;
 
@@ -24,21 +25,7 @@ public class ServiceConnectionResourceProvider : IResourceProvider<ServiceConnec
 
     public Task DeleteAsync(ServiceConnectionResource resource) => Task.CompletedTask;
 
-    public Task<ServiceConnectionResource> PlanAsync(ServiceConnectionResource? prior, ServiceConnectionResource proposed)
-    {
-        var resource = new ServiceConnectionResource
-        {
-            Id = proposed.Id,
-            ProjectId = proposed.ProjectId
-        };
-
-        if (prior?.Id != proposed.Id)
-        {
-            resource.ServicePrincipalId = null;
-        }
-
-        return Task.FromResult(resource);
-    }
+    public async Task<ServiceConnectionResource> PlanAsync(ServiceConnectionResource? prior, ServiceConnectionResource proposed) => await CreateNewResourceAsync(proposed);
 
     public async Task<ServiceConnectionResource> ReadAsync(ServiceConnectionResource resource) => await CreateNewResourceAsync(resource);
 

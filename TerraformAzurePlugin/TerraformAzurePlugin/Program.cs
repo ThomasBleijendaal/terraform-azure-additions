@@ -1,16 +1,19 @@
-﻿using Serilog;
-using TerraformAzurePlugin;
+﻿using TerraformAzurePlugin;
 using TerraformPluginDotNet;
 using TerraformPluginDotNet.ResourceProvider;
 
 /*
  * Terraform plugin todo's
- * - Create own Required attribute
+ * V Create own Required attribute
  * - ForceNew attribute?
- * - Nullables on interfaces
- * - Test for missing schema
+ * V Nullables on interfaces
+ * V Test for missing schema
  * - Move logging to ILogger
- * - Configure in CreateTerraformTestInstanceAsync should still configure terraform
+ * V Configure in CreateTerraformTestInstanceAsync should still configure terraform
+ * 
+ * Provider todo's
+ * - Apply keeps applying some known after apply..
+ * 
  */
 
 await TerraformPluginHost.RunAsync(args, "thomas-ict.nl/azure/azureadditions", (services, registry) =>

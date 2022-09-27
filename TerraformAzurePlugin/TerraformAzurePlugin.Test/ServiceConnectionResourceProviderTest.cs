@@ -6,7 +6,7 @@ using TerraformPluginDotNet.Testing;
 namespace TerraformAzurePlugin.Test;
 
 [TestFixture(Category = "Functional", Explicit = true)]
-public class SerivceConnectionResourceProviderTest
+public class ServiceConnectionResourceProviderTest
 {
     private const string ProviderName = "azureadditions";
 
