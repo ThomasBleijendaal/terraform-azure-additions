@@ -6,6 +6,7 @@
             <PAT>xx</PAT>
             <SCID>xx</SCID>
             <PID>xx</PID>
+            <AID>xx</AID>
         </EnvironmentVariables>
     </RunConfiguration>
 </RunSettings>
