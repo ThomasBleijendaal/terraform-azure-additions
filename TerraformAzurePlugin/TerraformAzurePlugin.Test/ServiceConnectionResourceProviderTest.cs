@@ -29,14 +29,14 @@ public class ServiceConnectionResourceProviderTest
     {
         services.AddSingleton<AzureConfigurator>();
         services.AddTerraformProviderConfigurator<AzureConfiguration, AzureConfigurator>();
-        services.AddHttpClient<IResourceProvider<ServiceConnectionResource>, ServiceConnectionResourceProvider>();
-        registryContext.RegisterResource<ServiceConnectionResource>($"{ProviderName}_serviceconnection");
+        services.AddHttpClient<IDataSourceProvider<ServiceConnectionResource>, ServiceConnectionResourceProvider>();
+        registryContext.RegisterDataSource<ServiceConnectionResource>($"{ProviderName}_serviceconnection");
     }
 
     [Test]
     public async Task TestCreateServiceConnectionResourceAsync()
     {
-        using var terraform = await _host.CreateTerraformTestInstanceAsync(ProviderName, configure: false);
+        using var terraform = await _host.CreateTerraformTestInstanceAsync(ProviderName, configureProvider: false);
 
         var resourcePath = Path.Combine(terraform.WorkDir, "file.tf");
 
@@ -46,17 +46,8 @@ public class ServiceConnectionResourceProviderTest
               personal_access_token = "{{Environment.GetEnvironmentVariable("PAT")}}"
             }
 
-            terraform {
-              required_providers {
-                {{ProviderName}} = {
-                  source = "example.com/example/{{ProviderName}}"
-                  version = "1.0.0"
-                }
-              }
-            }
-
-            resource "{{ProviderName}}_serviceconnection" "conn" {
-                id = "{{Environment.GetEnvironmentVariable("SCID")}}"
+            data "{{ProviderName}}_serviceconnection" "conn" {
+                service_connection_id = "{{Environment.GetEnvironmentVariable("SCID")}}"
                 project_id = "{{Environment.GetEnvironmentVariable("PID")}}"
             }
             """);
@@ -69,4 +60,59 @@ public class ServiceConnectionResourceProviderTest
 
         Console.WriteLine(applyOutput);
     }
+
+    [Test]
+    public async Task TestNoOpUpdateServiceConnectionResourceAsync()
+    {
+        using var terraform = await _host.CreateTerraformTestInstanceAsync(ProviderName, configureProvider: false, configureTerraform: true);
+
+        await File.WriteAllTextAsync(Path.Combine(terraform.WorkDir, "file.tf"), $$"""
+            provider "azureadditions" {
+              org_service_url       = "{{Environment.GetEnvironmentVariable("ORGURL")}}"
+              personal_access_token = "{{Environment.GetEnvironmentVariable("PAT")}}"
+            }
+
+            data "{{ProviderName}}_serviceconnection" "conn" {
+                service_connection_id = "{{Environment.GetEnvironmentVariable("SCID")}}"
+                project_id = "{{Environment.GetEnvironmentVariable("PID")}}"
+            }
+            """);
+
+        await File.WriteAllTextAsync(Path.Combine(terraform.WorkDir, "terraform.tfstate"), $$"""
+        {
+          "version": 4,
+          "terraform_version": "1.2.9",
+          "serial": 1,
+          "lineage": "f8244b30-6b8e-1f3a-63fa-b535791ceb2e",
+          "outputs": {},
+          "resources": [
+            {
+              "mode": "data",
+              "type": "azureadditions_serviceconnection",
+              "name": "conn",
+              "provider": "provider[\"example.com/example/azureadditions\"]",
+              "instances": [
+                {
+                  "schema_version": 1,
+                  "attributes": {
+                    "id": "{{Environment.GetEnvironmentVariable("PID")}}/{{Environment.GetEnvironmentVariable("SCID")}}",
+                    "project_id": "{{Environment.GetEnvironmentVariable("PID")}}",
+                    "service_connection_id": "{{Environment.GetEnvironmentVariable("SCID")}}",
+                    "service_principal_application_id": "{{Environment.GetEnvironmentVariable("AID")}}"
+                  },
+                  "sensitive_attributes": []
+                }
+              ]
+            }
+          ]
+        }
+
+        """);
+
+        var planOutput = await terraform.PlanWithOutputAsync();
+
+        Assert.That(planOutput.ResourceChanges, Is.Null);
+    }
 }
+
+
