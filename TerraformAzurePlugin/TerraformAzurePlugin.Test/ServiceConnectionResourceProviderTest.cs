@@ -29,8 +29,8 @@ public class ServiceConnectionResourceProviderTest
     {
         services.AddSingleton<AzureConfigurator>();
         services.AddTerraformProviderConfigurator<AzureConfiguration, AzureConfigurator>();
-        services.AddHttpClient<IResourceProvider<ServiceConnectionResource>, ServiceConnectionResourceProvider>();
-        registryContext.RegisterResource<ServiceConnectionResource>($"{ProviderName}_serviceconnection");
+        services.AddHttpClient<IDataSourceProvider<ServiceConnectionResource>, ServiceConnectionResourceProvider>();
+        registryContext.RegisterDataSource<ServiceConnectionResource>($"{ProviderName}_serviceconnection");
     }
 
     [Test]
@@ -46,7 +46,7 @@ public class ServiceConnectionResourceProviderTest
               personal_access_token = "{{Environment.GetEnvironmentVariable("PAT")}}"
             }
 
-            resource "{{ProviderName}}_serviceconnection" "conn" {
+            data "{{ProviderName}}_serviceconnection" "conn" {
                 service_connection_id = "{{Environment.GetEnvironmentVariable("SCID")}}"
                 project_id = "{{Environment.GetEnvironmentVariable("PID")}}"
             }
@@ -72,7 +72,7 @@ public class ServiceConnectionResourceProviderTest
               personal_access_token = "{{Environment.GetEnvironmentVariable("PAT")}}"
             }
 
-            resource "{{ProviderName}}_serviceconnection" "conn" {
+            data "{{ProviderName}}_serviceconnection" "conn" {
                 service_connection_id = "{{Environment.GetEnvironmentVariable("SCID")}}"
                 project_id = "{{Environment.GetEnvironmentVariable("PID")}}"
             }
@@ -87,7 +87,7 @@ public class ServiceConnectionResourceProviderTest
           "outputs": {},
           "resources": [
             {
-              "mode": "managed",
+              "mode": "data",
               "type": "azureadditions_serviceconnection",
               "name": "conn",
               "provider": "provider[\"example.com/example/azureadditions\"]",
@@ -111,7 +111,7 @@ public class ServiceConnectionResourceProviderTest
 
         var planOutput = await terraform.PlanWithOutputAsync();
 
-        Assert.That(planOutput.ResourceChanges.SelectMany(x => x.Change.Actions).All(x => x == "no-op"), Is.True);
+        Assert.That(planOutput.ResourceChanges, Is.Null);
     }
 }
 

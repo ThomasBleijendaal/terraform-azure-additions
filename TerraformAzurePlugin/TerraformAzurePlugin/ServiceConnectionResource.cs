@@ -1,8 +1,7 @@
 ﻿using System.ComponentModel;
-using System.Text;
 using MessagePack;
-using MessagePack.Formatters;
 using TerraformPluginDotNet.Resources;
+using TerraformPluginDotNet.Serialization;
 
 namespace TerraformAzurePlugin;
 
@@ -33,37 +32,4 @@ public class ServiceConnectionResource
     [Computed]
     [MessagePackFormatter(typeof(ComputedStringValueFormatter))]
     public string? ServicePrincipalApplicationId { get; set; } = null!;
-}
-
-
-public class ComputedStringValueFormatter : IMessagePackFormatter<string>, IMessagePackFormatter
-{
-    public string Deserialize(ref MessagePackReader reader, MessagePackSerializerOptions options)
-    {
-        if (reader.TryReadNil())
-        {
-            return null;
-        }
-
-        if (reader.NextMessagePackType == MessagePackType.Extension && 
-            reader.TryReadExtensionFormatHeader(out var extensionHeader) && extensionHeader.TypeCode == 0)
-        {
-            reader.Skip();
-            return null;
-        }
-
-        return reader.ReadString();
-    }
-
-    public void Serialize(ref MessagePackWriter writer, string value, MessagePackSerializerOptions options)
-    {
-        if (value == null)
-        {
-            writer.WriteExtensionFormat(new ExtensionResult(0, new byte[1]));
-        }
-        else
-        {
-            writer.WriteString(Encoding.UTF8.GetBytes(value));
-        }
-    }
 }

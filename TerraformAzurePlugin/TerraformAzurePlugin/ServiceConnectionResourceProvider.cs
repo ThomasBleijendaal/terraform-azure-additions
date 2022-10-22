@@ -4,7 +4,7 @@ using TerraformPluginDotNet.ResourceProvider;
 
 namespace TerraformAzurePlugin;
 
-public class ServiceConnectionResourceProvider : IResourceProvider<ServiceConnectionResource>
+public class ServiceConnectionResourceProvider : IDataSourceProvider<ServiceConnectionResource>
 {
     private readonly AzureConfigurator _azureConfigurator;
     private readonly HttpClient _httpClient;
@@ -20,20 +20,7 @@ public class ServiceConnectionResourceProvider : IResourceProvider<ServiceConnec
             Convert.ToBase64String(Encoding.UTF8.GetBytes($":{_azureConfigurator.Config.PersonalAccessToken}")));
     }
 
-    public async Task<ServiceConnectionResource> CreateAsync(ServiceConnectionResource planned) => await CreateNewResourceAsync(planned);
-
-    public Task DeleteAsync(ServiceConnectionResource resource) => Task.CompletedTask;
-
-    public Task<IList<ServiceConnectionResource>> ImportAsync(string id)
-    {
-        throw new NotImplementedException();
-    }
-
-    public async Task<ServiceConnectionResource> PlanAsync(ServiceConnectionResource? prior, ServiceConnectionResource proposed) => await CreateNewResourceAsync(proposed);
-
     public async Task<ServiceConnectionResource> ReadAsync(ServiceConnectionResource resource) => await CreateNewResourceAsync(resource);
-
-    public async Task<ServiceConnectionResource> UpdateAsync(ServiceConnectionResource? prior, ServiceConnectionResource planned) => await CreateNewResourceAsync(planned);
 
     private async Task<ServiceConnectionResource> CreateNewResourceAsync(ServiceConnectionResource resource)
     {
